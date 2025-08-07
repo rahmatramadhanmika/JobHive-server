@@ -26,7 +26,7 @@ if (process.env.NODE_ENV !== 'production') {
 app.use(cookieParser());
 app.use(
     cors({
-        origin: "https://sonervous.site/",
+        origin: "https://sonervous.site",
         credentials: true,
     })
 );
