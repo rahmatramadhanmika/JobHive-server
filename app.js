@@ -26,12 +26,7 @@ if (process.env.NODE_ENV !== 'production') {
 app.use(cookieParser());
 app.use(
     cors({
-        origin: [
-            "http://localhost:5173",
-            "https://api.sonerous.site",
-            "https://sonerous.site",
-            "http://api.sonerous.site"
-        ],
+        origin: "http://localhost:5173",
         credentials: true,
     })
 );
@@ -51,12 +46,6 @@ app.use(
     })
 );
 
-// Add request logging middleware
-app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
-});
-
 // Initialize passport AFTER session
 app.use(passport.initialize());
 app.use(passport.session());
@@ -73,15 +62,6 @@ app.use("/api/v1/cv-analyzer", cvAnalyzerRouter);
 // Basic test route
 app.get("/", (req, res) => {
     res.json({ message: "Job Portal API is running!" });
-});
-
-// Health check endpoint for load balancer
-app.get("/health", (req, res) => {
-    res.status(200).json({ 
-        status: "healthy", 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
 });
 
 // Add a test route for saved jobs to debug
