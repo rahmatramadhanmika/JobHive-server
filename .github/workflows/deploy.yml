@@ -99,5 +99,15 @@ jobs:
             # Stop existing PM2 processes
             pm2 delete all || true
             
-            # Start the application
-            pm2 start index.js --name express-test  
+            # Start the application with proper configuration
+            pm2 start index.js --name express-test
+            
+            # Save PM2 configuration
+            pm2 save
+            
+            # Check if application started successfully
+            sleep 5
+            pm2 status
+            
+            # Test health endpoint
+            curl -f http://localhost:3000/health || echo "Health check failed"  
