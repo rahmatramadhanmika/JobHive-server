@@ -1,0 +1,88 @@
+name: Deploy Express App to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+
+      - name: Remove old app.zip
+        run: rm -rf app.zip
+
+      - name: Archive project
+        run: zip -r app.zip . -x "*.git*" "node_modules/*" ".github/*"
+
+      - name: Code archive to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "app.zip"
+          target: "~"
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd ~
+            rm -rf express-test/
+            sudo apt install -y unzip
+            unzip -o app.zip -d express-test
+            cd express-test
+            cat <<EOF> .env
+            ADMIN_TOKEN= '${{ secrets.ADMIN_TOKEN }}'
+            JWT_SECRET= '${{ secrets.JWT_SECRET }}'
+            JWT_EXPIRE= '${{ secrets.JWT_EXPIRE }}'
+            GOOGLE_APP_PASSWORD= '${{ secrets.GOOGLE_APP_PASSWORD }}'
+            GOOGLE_CLIENT_ID= '${{ secrets.GOOGLE_CLIENT_ID }}'
+            GOOGLE_CLIENT_SECRET= '${{ secrets.GOOGLE_CLIENT_SECRET }}'
+            MONGODB_URI= '${{ secrets.MONGODB_URI }}'
+            PORT= '${{ secrets.PORT }}'
+            NODE_ENV= '${{ secrets.NODE_ENV }}'
+            FRONTEND_URL= '${{ secrets.FRONTEND_URL }}'
+            MAX_FILE_SIZE= '${{ secrets.MAX_FILE_SIZE }}'
+            ALLOWED_FILE_TYPES= '${{ secrets.ALLOWED_FILE_TYPES }}'
+            EMAIL_HOST= '${{ secrets.EMAIL_HOST }}'
+            EMAIL_PORT= '${{ secrets.EMAIL_PORT }}'
+            EMAIL_USER= '${{ secrets.EMAIL_USER }}'
+            EMAIL_PASS= '${{ secrets.EMAIL_PASS }}'
+            OPENAI_API_KEY= '${{ secrets.OPENAI_API_KEY }}'
+            OPENAI_MODEL= '${{ secrets.OPENAI_MODEL }}'
+            OPENAI_MAX_TOKENS= '${{ secrets.OPENAI_MAX_TOKENS }}'
+            OPENAI_TEMPERATURE= '${{ secrets.OPENAI_TEMPERATURE }}'
+            CV_MAX_FILE_SIZE= '${{ secrets.CV_MAX_FILE_SIZE }}'
+            CV_UPLOAD_DIR= '${{ secrets.CV_UPLOAD_DIR }}'
+            AWS_ACCESS_KEY_ID= '${{ secrets.AWS_ACCESS_KEY_ID }}'
+            AWS_SECRET_ACCESS_KEY= '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+            AWS_BUCKET_NAME= '${{ secrets.AWS_BUCKET_NAME }}'
+            AWS_REGION= '${{ secrets.AWS_REGION }}'
+            EOF
+            
+            sudo apt install -y nodejs npm
+            sudo npm ci
+            sudo npm i -g pm2
+            pm2 delete all || true
+            pm2 start index.js --name express-test  
