@@ -109,5 +109,14 @@ jobs:
             sleep 5
             pm2 status
             
+            # Show recent logs
+            echo "=== Recent PM2 Logs ==="
+            pm2 logs express-test --lines 10 --nostream
+            
+            # Test root endpoint first
+            echo "=== Testing Root Endpoint ==="
+            curl -f http://localhost:3000/ || echo "Root endpoint failed"
+            
             # Test health endpoint
+            echo "=== Testing Health Endpoint ==="
             curl -f http://localhost:3000/health || echo "Health check failed"  
