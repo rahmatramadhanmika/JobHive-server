@@ -24,9 +24,25 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use(cookieParser());
+
+// Log incoming requests with origin
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+    console.log('Origin:', req.get('Origin') || 'No Origin header');
+    console.log('Referer:', req.get('Referer') || 'No Referer header');
+    console.log('User-Agent:', req.get('User-Agent') || 'No User-Agent header');
+    console.log('---');
+    next();
+});
+
 app.use(
     cors({
-        origin: "https://sonervous.site",
+        origin: [
+            "https://sonervous.site", 
+            "http://localhost:5173",
+            "http://localhost:3000",
+            process.env.FRONTEND_URL
+        ].filter(Boolean), // Remove undefined values
         credentials: true,
     })
 );
@@ -61,7 +77,12 @@ app.use("/api/v1/cv-analyzer", cvAnalyzerRouter);
 
 // Basic test route
 app.get("/", (req, res) => {
-    res.json({ message: "Job Portal API is running!" });
+    res.json({ 
+        message: "Job Portal API is running!",
+        timestamp: new Date().toISOString(),
+        port: process.env.PORT || 3000,
+        origin: req.get('Origin') || 'Direct access'
+    });
 });
 
 // Add a test route for saved jobs to debug
