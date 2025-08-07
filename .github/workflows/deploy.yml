@@ -49,6 +49,7 @@ jobs:
             set -e
             cd ~
             rm -rf express-test/
+            sudo apt update
             sudo apt install -y unzip
             unzip -o app.zip -d express-test
             cd express-test
@@ -81,8 +82,22 @@ jobs:
             AWS_REGION= '${{ secrets.AWS_REGION }}'
             EOF
             
-            sudo apt install -y nodejs npm
-            sudo npm ci
-            sudo npm i -g pm2
+            # Check if Node.js and npm are already installed
+            if ! command -v node &> /dev/null; then
+                curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+                sudo apt-get install -y nodejs
+            fi
+            
+            # Install dependencies
+            npm ci
+            
+            # Install PM2 globally if not already installed
+            if ! command -v pm2 &> /dev/null; then
+                sudo npm install -g pm2
+            fi
+            
+            # Stop existing PM2 processes
             pm2 delete all || true
+            
+            # Start the application
             pm2 start index.js --name express-test  
