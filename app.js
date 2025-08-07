@@ -24,25 +24,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use(cookieParser());
-
-// Log incoming requests with origin
-app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
-    console.log('Origin:', req.get('Origin') || 'No Origin header');
-    console.log('Referer:', req.get('Referer') || 'No Referer header');
-    console.log('User-Agent:', req.get('User-Agent') || 'No User-Agent header');
-    console.log('---');
-    next();
-});
-
 app.use(
     cors({
-        origin: [
-            "https://sonervous.site", 
-            "http://localhost:5173",
-            "http://localhost:3000",
-            process.env.FRONTEND_URL
-        ].filter(Boolean), // Remove undefined values
+        origin: "https://sonervous.site",
         credentials: true,
     })
 );
